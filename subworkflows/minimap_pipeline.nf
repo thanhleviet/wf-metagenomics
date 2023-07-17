@@ -95,6 +95,50 @@ process minimap {
     }
 }
 
+process EMU {
+    label "emu"
+    
+    conda "${baseDir}/envs/emu.yaml"
+
+    cpus params.threads
+    input:
+        tuple val(meta), path(concat_seqs), path(fastcat_stats)
+        path emu_db
+        path taxonomy
+    output:
+        tuple(
+            val(meta),
+            path("*.tsv"),
+            emit: assignments)
+        tuple(
+            val(meta),
+            path("*lineages.txt"),
+            emit: lineage_txt)
+        tuple(
+            val(meta),
+            path("${meta.alias}_emu.json"),
+            emit: lineage_json)
+    script:
+        def sample_id = "${meta.alias}" ?: concat_seqs.getSimpleName
+    """
+    emu abundance -x map-ont --threads "${task.cpus}" --db "${emu_db}" \
+    --keep-files --keep-read-assignments --output-unclassified --output-dir results \
+    "${concat_seqs}"
+    # Extract taxid to taixds.tmp
+    extract_taxid.py results/seqs.fastq_read-assignment-distributions.tsv 
+    ln -s results/seqs.fastq_read-assignment-distributions.tsv  "${sample_id}.assignment-distributions.tsv"
+    ln -s results/seqs.fastq_rel-abundance.tsv "${sample_id}.rel-abundance.tsv"
+    
+    taxonkit \
+            --data-dir "${taxonomy}" \
+            lineage -R taxids.tmp > lineage.tsv
+    aggregate_emu_lineage.py -p "${sample_id}.emu" -i lineage.tsv
+    file1=`cat *.json`
+    echo "{"'"${sample_id}_emu"'": "\$file1"}" >> temp
+    cp "temp" "${sample_id}_emu.json"
+    """
+}
+
 
 process extractMinimap2Reads {
     label "wfmetagenomics"
@@ -230,7 +274,21 @@ workflow minimap_pipeline {
                 ref2taxid,
                 taxonomy
             )
+
         lineages = lineages.mix(mm2.lineage_json)
+        
+        if (!params.skip_emu && params.classifier == "minimap2") {
+            emu_db = Channel.fromPath(params.emu_db)
+            emu = EMU(
+                samples
+                | map { [it[0], it[1], it[2] ?: OPTIONAL_FILE ] },
+                emu_db,
+                taxonomy
+            )
+            lineages = lineages.mix(emu.lineage_json)
+        }
+        
+
         outputs += [
             mm2.bam,
             mm2.assignments,

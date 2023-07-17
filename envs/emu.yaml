@@ -1,0 +1,12 @@
+name: emu
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+  - emu=3.4.5
+  - taxonkit
+  - pandas=2.0.3
+  - samtools=1.17
+  - pysam
