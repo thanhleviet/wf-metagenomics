@@ -60,23 +60,39 @@ process minimap {
     script:
         def sample_id = "${meta.alias}"
         def split = params.split_prefix ? '--split-prefix tmp' : ''
-    """
-    minimap2 -t "${task.cpus}" ${split} -ax map-ont "${reference}" "${concat_seqs}" \
-    | samtools view -h -F 2304 - \
-    | workflow-glue format_minimap2 - -o "${sample_id}.minimap2.assignments.tsv" -r "${ref2taxid}" \
-    | samtools sort -o "${sample_id}.bam" -
-    samtools index "${sample_id}.bam"
-    awk -F '\\t' '{print \$3}' "${sample_id}.minimap2.assignments.tsv" > taxids.tmp
-    taxonkit \
-        --data-dir "${taxonomy}" \
-        lineage -R taxids.tmp \
-        | workflow-glue aggregate_lineages -p "${sample_id}.minimap2"
-    file1=`cat *.json`
-    echo "{"'"$sample_id"'": "\$file1"}" >> temp
-    cp "temp" "${sample_id}.json"
-
-
-    """
+    if (!params.custom_db) {
+        """
+        minimap2 -t "${task.cpus}" ${split} -ax map-ont "${reference}" "${concat_seqs}" \
+        | samtools view -h -F 2304 - \
+        | workflow-glue format_minimap2 - -o "${sample_id}.minimap2.assignments.tsv" -r "${ref2taxid}" \
+        | samtools sort -o "${sample_id}.bam" -
+        samtools index "${sample_id}.bam"
+        awk -F '\\t' '{print \$3}' "${sample_id}.minimap2.assignments.tsv" > taxids.tmp
+        taxonkit \
+            --data-dir "${taxonomy}" \
+            lineage -R taxids.tmp \
+            | workflow-glue aggregate_lineages -p "${sample_id}.minimap2"
+        file1=`cat *.json`
+        echo "{"'"$sample_id"'": "\$file1"}" >> temp
+        cp "temp" "${sample_id}.json"
+        """
+    } else {
+        """
+        minimap2 -t "${task.cpus}" ${split} -ax map-ont "${reference}" "${concat_seqs}" \
+        | samtools view -h -F 2304 - \
+        | samtools sort -o "${sample_id}.bam" -
+        samtools index "${sample_id}.bam"
+        samtools view ${sample_id}.bam | cut -f 1-3 > "${sample_id}.minimap2.assignments.tsv"
+        samtools view -F 4 ${sample_id}.bam | cut -f 3 | sed 's/|.*//' > taxids.tmp
+        taxonkit \
+            --data-dir "${taxonomy}" \
+            lineage -R taxids.tmp \
+            | workflow-glue aggregate_lineages -p "${sample_id}.minimap2"
+        file1=`cat *.json`
+        echo "{"'"$sample_id"'": "\$file1"}" >> temp
+        cp "temp" "${sample_id}.json"
+        """
+    }
 }
 
 
