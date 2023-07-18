@@ -265,7 +265,7 @@ workflow minimap_pipeline {
         metadata = samples.map { it[0] }.toList()
 
         // Run Minimap2
-        if (!params.minimap2 && params.classifier == "mapping") {
+        if (!params.skip_minimap2 && params.classifier == "mapping") {
             mm2 = minimap(
                 samples
                 | map { [it[0], it[1], it[2] ?: OPTIONAL_FILE ] },
@@ -279,7 +279,7 @@ workflow minimap_pipeline {
         }
         
         if (!params.skip_emu && params.classifier == "mapping") {
-            emu_db = Channel.fromPath(params.emu_db)
+            emu_db = file(params.emu_db, type: "file", checkIfExists:true)
             emu = EMU(
                 samples
                 | map { [it[0], it[1], it[2] ?: OPTIONAL_FILE ] },

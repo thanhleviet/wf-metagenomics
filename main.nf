@@ -59,7 +59,7 @@ workflow {
     reference = null
     refindex  = null
     ref2taxid = null
-    if ("${params.classifier}" == "minimap2") {
+    if ("${params.classifier}" == "mapping") {
         // .fasta
         if (params.reference) {
             log.info("Checking custom reference exists")

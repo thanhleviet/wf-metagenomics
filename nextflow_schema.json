@@ -203,7 +203,7 @@
                 "skip_emu": {
                     "type": "boolean",
                     "description": "Skip EMU",
-                    "default": true
+                    "default": false
                 },
                 "minimap2filter": {
                     "type": "string",
