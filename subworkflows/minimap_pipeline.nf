@@ -29,6 +29,24 @@ process unpackTaxonomy {
     """
 }
 
+process unpackEmuDB {
+    
+    label "CHANGE_ME"
+    
+    tag {}
+    
+    cpus 
+
+    input:
+
+    output:
+    path "versions.yml"                                 , emit: versions
+
+    script:
+    """
+
+    """
+}
 
 process minimap {
     label "wfmetagenomics"
@@ -185,6 +203,7 @@ process getVersions {
     samtools --version | head -n 1 | sed 's/ /,/' >> versions.txt
     taxonkit version | sed 's/ /,/' >> versions.txt
     kraken2 --version | head -n 1 | sed 's/ version /,/' >> versions.txt
+    emu --version | sed 's/ /,/' >> versions.txt
     """
 }
 

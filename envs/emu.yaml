@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python=3.10
   - emu=3.4.5
+  - minimap2=2.25
   - taxonkit
   - pandas=2.0.3
   - samtools=1.17

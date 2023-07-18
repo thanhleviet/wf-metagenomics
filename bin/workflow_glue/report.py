@@ -22,7 +22,7 @@ from .util import get_named_logger, wf_parser  # noqa: ABS101
 WORKFLOW_NAME = 'wf-metagenomics'
 REPORT_TITLE = f'{WORKFLOW_NAME}-report'
 THEME = 'epi2melabs'
-N_BARPLOT = 8  # number of taxa to plot in the barplot
+N_BARPLOT = 10  # number of taxa to plot in the barplot
 
 
 def main(args):
