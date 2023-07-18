@@ -265,8 +265,8 @@ workflow minimap_pipeline {
         metadata = samples.map { it[0] }.toList()
 
         // Run Minimap2
-  
-        mm2 = minimap(
+        if (!params.minimap2 && params.classifier == "mapping") {
+            mm2 = minimap(
                 samples
                 | map { [it[0], it[1], it[2] ?: OPTIONAL_FILE ] },
                 reference,
@@ -275,9 +275,10 @@ workflow minimap_pipeline {
                 taxonomy
             )
 
-        lineages = lineages.mix(mm2.lineage_json)
+            lineages = lineages.mix(mm2.lineage_json)
+        }
         
-        if (!params.skip_emu && params.classifier == "minimap2") {
+        if (!params.skip_emu && params.classifier == "mapping") {
             emu_db = Channel.fromPath(params.emu_db)
             emu = EMU(
                 samples

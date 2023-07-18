@@ -23,11 +23,11 @@
                 },
                 "classifier": {
                     "type": "string",
-                    "default": "kraken2",
+                    "default": "mapping",
                     "description": "Kraken2 or Minimap2 workflow to be used for classification of reads.",
                     "enum": [
                         "kraken2",
-                        "minimap2"
+                        "mapping"
                     ],
                     "help_text": "Use kraken2 for fast classification and minimap2 for more finer resolution, see Readme for further info."
                 },
@@ -143,13 +143,15 @@
                     "type": "string",
                     "format": "file-path",
                     "description": "Specifically override bracken kmer dist file",
-                    "help_text": "A default kmer_dist is provided in database_set selected. Which was generated from the kraken database."
+                    "help_text": "A default kmer_dist is provided in database_set selected. Which was generated from the kraken database.",
+                    "hidden": true
                 },
                 "bracken_length": {
                     "type": "integer",
                     "description": "Set the length value bracken will use",
                     "minimum": 1,
-                    "help_text": "Should be set to the length used to generate the kmer distribution file supplied in the kraken database input directory. For the default datasets these will be set automatically. ncbi_16s_18s = 10000 , ncbi_16s_18s_28s_ITS = 1000 , PlusPF-8 = 300"
+                    "help_text": "Should be set to the length used to generate the kmer distribution file supplied in the kraken database input directory. For the default datasets these will be set automatically. ncbi_16s_18s = 10000 , ncbi_16s_18s_28s_ITS = 1000 , PlusPF-8 = 300",
+                    "hidden": true
                 },
                 "bracken_level": {
                     "type": "string",
@@ -163,33 +165,46 @@
                         "O",
                         "C",
                         "P"
-                    ]
+                    ],
+                    "hidden": true
                 },
                 "port": {
                     "type": "integer",
                     "description": "Network port for communication between kraken2 server and clients",
                     "default": 8080,
-                    "help_text": "The workflow uses a server process to handle kraken2 classification requests. This allows the workflow to persist the sequence database in memory throughout the duration of processing. The option specifies the local network port on which the server and clients will communicate."
+                    "help_text": "The workflow uses a server process to handle kraken2 classification requests. This allows the workflow to persist the sequence database in memory throughout the duration of processing. The option specifies the local network port on which the server and clients will communicate.",
+                    "hidden": true
                 },
                 "host": {
                     "type": "string",
                     "description": "Network hostname (or IP address) for communication between kraken2 server and clients. (See also 'external_kraken2' parameter).",
                     "default": "localhost",
-                    "help_text": "The workflow uses a server process to handle kraken2 classification requests. This allows the workflow to persist the sequence database in memory throughout the duration of processing. The option specifies the local network hostname (or IP address) of the kraken server."
+                    "help_text": "The workflow uses a server process to handle kraken2 classification requests. This allows the workflow to persist the sequence database in memory throughout the duration of processing. The option specifies the local network hostname (or IP address) of the kraken server.",
+                    "hidden": true
                 },
                 "external_kraken2": {
                     "type": "boolean",
                     "description": "Whether a pre-existing kraken2 server should be used, rather than creating one as part of the workflow",
-                    "help_text": "By default the workflow assumes that it is running on a single host computer, and further that it should start its own kraken2 server. It may be desirable to start a kraken2 server outside of the workflow, in which case this option should be enabled. This option may be used in conjuction with the `host` option to specify that the kraken2 server is running on a remote computer. "
+                    "help_text": "By default the workflow assumes that it is running on a single host computer, and further that it should start its own kraken2 server. It may be desirable to start a kraken2 server outside of the workflow, in which case this option should be enabled. This option may be used in conjuction with the `host` option to specify that the kraken2 server is running on a remote computer. ",
+                    "hidden": true
                 }
             },
             "description": "Kraken2 classification options. Only relevant if classifier parameter is set to kraken2"
         },
-        "minimap2_options": {
-            "title": "Minimap2 Options",
+        "minimap2_based_options": {
+            "title": "Minimap2 Based Options",
             "type": "object",
             "fa_icon": "fas fa-dna",
             "properties": {
+                "skip_minimap2": {
+                    "type": "boolean",
+                    "description": "Skip Minimap2"
+                },
+                "skip_emu": {
+                    "type": "boolean",
+                    "description": "Skip EMU",
+                    "default": true
+                },
                 "minimap2filter": {
                     "type": "string",
                     "description": "Filter output of minimap2 by taxids inc. child nodes, E.g. \"9606,1404\"",
@@ -213,8 +228,12 @@
                 },
                 "custom_db": {
                     "type": "boolean",
-                    "description": "Use custom DB for minimap2",
+                    "description": "Path to custom Minimap2 database",
                     "help_text": "Select this option if you want to use a custom DB for minimap2 instead of the 16S NCBI provided by Epi2Me. It's a fasta file with the sequence header format: taxid|lineage"
+                },
+                "emu_db": {
+                    "type": "string",
+                    "description": "Path to EMU database"
                 }
             },
             "description": "Minimap2 classification options. Only relevant if classifier parameter is set to minimap2.",
@@ -330,7 +349,7 @@
             "$ref": "#/definitions/kraken2_options"
         },
         {
-            "$ref": "#/definitions/minimap2_options"
+            "$ref": "#/definitions/minimap2_based_options"
         },
         {
             "$ref": "#/definitions/output_options"
