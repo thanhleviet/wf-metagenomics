@@ -33,18 +33,18 @@ process unpackEmuDB {
     
     label "CHANGE_ME"
     
-    tag {}
+    tag {"running"}
     
-    cpus 
+    cpus 1
 
     input:
-
+        path emu_db
     output:
-    path "versions.yml"                                 , emit: versions
+        path "emu-db"
 
     script:
     """
-
+    tar xf $emu_db
     """
 }
 
@@ -203,7 +203,7 @@ process getVersions {
     samtools --version | head -n 1 | sed 's/ /,/' >> versions.txt
     taxonkit version | sed 's/ /,/' >> versions.txt
     kraken2 --version | head -n 1 | sed 's/ version /,/' >> versions.txt
-    emu --version | sed 's/ /,/' >> versions.txt
+    #emu --version | sed 's/ /,/' >> versions.txt
     """
 }
 
@@ -298,7 +298,12 @@ workflow minimap_pipeline {
         }
         
         if (!params.skip_emu && params.classifier == "mapping") {
-            emu_db = file(params.emu_db, type: "file", checkIfExists:true)
+            if (params.emu_db.startsWith("https")) {
+                emu_db = unpackEmuDB(file(params.emu_db))
+            } else {
+                emu_db = file(params.emu_db, type: "file", checkIfExists:true)
+            }
+            
             emu = EMU(
                 samples
                 | map { [it[0], it[1], it[2] ?: OPTIONAL_FILE ] },
