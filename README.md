@@ -27,7 +27,8 @@ barcode03,sample3
 ```
 ### Quick command
 ```bash
-nextflow run /share/16S/wf-metagenomics \
+nextflow run thanhleviet/wf-metagenomics \
+-r custom-db \
 --reference /share/16S/U16S-DPOT/output_db/U16S.BLAST_format.thanhlv.fa.gz \
 --fastq /input/data \
 --sample_sheet /path/to/sample_sheet.csv \
