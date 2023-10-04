@@ -1,81 +1,8 @@
 # wf-metagenomics
+This is the modified version from the original pipeline `epi2me-labs/wf-metagenomics` see [original README](README.original.md) with the software `emu` being added.
+### Input
 
-wf-metagenomics is a Nextflow workflow for identification of the origin of single reads from both amplicon-targeted and shotgun metagenomics sequencing. The workflow has two modes of operation, it can use either [kraken2](https://ccb.jhu.edu/software/kraken2/) or [minimap2](https://github.com/lh3/minimap2) to determine the origin of reads.
-
-The kraken2 mode can be used in real-time, allowing the workflow to run continuously alongside an ongoing sequencing run as read data is being produced by the Oxford Nanopore Technologies' sequencing instrument. The user can visualise the classification of reads and species abundances in a real-time updating report.
-
-
-
-
-
-## Introduction
-
-wf-metagenomics offers two different approaches to assigning sequence reads to a species:
-
-### Kraken2 - Default
-
-[Kraken2](https://github.com/DerrickWood/kraken2) is used with the [Kraken2-server](https://github.com/epi2me-labs/kraken2-server) to offer the fastest method for classification of reads. [Bracken](https://github.com/jenniferlu717/Bracken) is then used to give a good estimate of species level abundance in the sample which can be visualised in the report. The Kraken2 workflow mode can be run in real time. See quickstart below for more details.
-
-### Minimap2 
-
-[Minimap2](https://github.com/lh3/minimap2) provides the finest resolution analysis but, depending on the reference database used, at the expense of significantly more compute time. Currently the minimap2 mode does not support real-time.
-
-The wf-metagenomics workflow by default uses the NCBI 16S + 18S rRNA database that will be downloaded at the start of an analysis, there are expanded metagenomic database options available with the --source parameter but the workflow is not tied to this database and can also be used with custom databases as required.
-
-
-
-
-
-## Quickstart
-
-The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and 
-software resources, as such nextflow will need to be installed before attempting
-to run the workflow.
-
-The workflow can currently be run using either
-[Docker](https://www.docker.com/products/docker-desktop) or
-[Singularity](https://sylabs.io/singularity/) to provide isolation of
-the required software. Both methods are automated out-of-the-box provided
-either docker or singularity is installed.
-
-It is not required to clone or download the git repository in order to run the workflow.
-For more information on running EPI2ME Labs workflows [visit out website](https://labs.epi2me.io/wfindex).
-
-**Workflow options**
-
-To obtain the workflow, having installed `nextflow`, users can run:
-
-```
-nextflow run epi2me-labs/wf-metagenomics --help
-```
-
-to see the options for the workflow.
-
-The main options are 
-
-* `fastq`: A fastq file or directory containing fastq input files or directories of input files. 
-* `kraken2`: When set to true will run the analysis with Kraken2 and Bracken
-* `minimap2`: When set to true will run the analysis with minimap2
-* `watch_path`: Used to run the workflow in real-time, will continue to watch until a "STOP.fastq" is found
-* `read_limit`: Used in combination with watch_path the specify an end point
-
-***Kraken2***
-
-You can run the workflow with test_data available in the github repository.
-
-```nextflow run epi2me-labs/wf-metagenomics --fastq test_data```
-
-You can also run the workflow in real-time, meaning the workflow will watch the input directory(s) and process inputs at they become available in the batch sizes specified.
-
-```nextflow run epi2me-labs/wf-metagenomics --fastq test_data --watch_path --batch_size 1000```
-
-**Important Note**
-
-When using the real-time functionality of the workflow, the input directory must contain sequencing reads in fastq files or sub-directories which themselves contain sequencing reads in fastq files. This is in contrast to the standard workflow which can additionally accept reads provided as a single file directly.
-
-The below is therefore the only input layout supported by the real-time functionality (the names of the child directories are unrestricted):
-
-eg.
+This pipeline requires input structure like below:
 
 ```
  ─── input_directory        ─── input_directory
@@ -90,71 +17,100 @@ eg.
                                     └── reads0.fastq
 ```
 
-***Minimap2***
+Each *barcode* can have a single fastq.gz; you can then prepare a sample sheet file to get the sample name reported instead the barcode
 
-Alternatively you can run using minimap2 instead. Currently this mode does not support real-time.
-
-```nextflow run epi2me-labs/wf-metagenomics --fastq test_data --classifier minimap2```
-
-***Databases***
-
-The wf-metagenomics pipeline has 4 pre-defined databases.
-
-To analyze  archaeal, bacterial and fungal 16S/18S and ITS data, there are two databases available that we have put together using the data from [NCBI](https://www.ncbi.nlm.nih.gov/refseq/targetedloci/). They can be used in both kraken2 and minimap2 pipelines:
-* ncbi_16s_18s
-* ncbi_16s_18s_28s_ITS
-
-To analyze metagenomics data (not just 16S/18S rRNA and ITS) with the kraken2 pipeline, there are different databases available [here](https://benlangmead.github.io/aws-indexes/k2). We have selected two of them:
-* PlusPF-8: It contains references for Archaea, Bacteria, viral, plasmid, human, UniVec_Core, protozoa and fungi. To use this database the memory available to the workflow must be slightly higher than size of the database index (8GB).
-* PlusPFP-8: It contains references for Archaea, Bacteria, viral, plasmid, human, UniVec_Core, protozoa, fungi and plant. To use this database the memory available to the workflow must be slightly higher than size of the database index (8GB).
-
-If you want to run the workflow using your own database, you can use the parameters: database_set, taxonomy, database (kraken2) and reference (either a FASTA format reference or a minimap2 MMI format index) and ref2taxid (minimap2). Run `nextflow run main.nf --help` to find out more about them.
-
-***Output***
-
-The main output of the wf-metagenomics pipeline is the `wf-metagenomics-report.html` which can be found in the output directory. It contains a summary of read statistics, the taxonomic composition of the community and some diversity metrics.
-
-***Diversity***
-
-Species diversity refers to the taxonomic composition in a specific microbial community. There are three main concepts:
-
-* Richness: number of unique taxonomic groups present in the community,
-* Taxonomic group abundance: number of individuals of a particular taxonomic group present in the community,
-* Evenness: refers to the equitability of the different taxonomic groups in terms of their abundances.
-
-Two different communities can host the same number of different taxonomic groups (i.e. they have the same richness), but they can have different evenness. For instance, if there is one taxon whose abundance is much larger in one community compared to the other.
-
-To provide a quick overview of the diversity of the microbial community, we provide some of the most common indices calculated by a specific taxonomic rank <sup>[1](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4224527/)</sup>. This rank can be chosen by the user providind the flag *--bracken_level* and the desired rank: 'D'=Domain,'P'=Phylum, 'C'=Class, 'O'=Order, 'F'=Family, 'G'=Genus, 'S'=Species. By default, the rank is 'S' (species level). Some of these indices are:
-
-* Shannon Diversity Index (H): Shannon entropy approaches zero when one of the taxa is much more abundant than the others.    
-```math
-H = -\sum_{i=1}^{S}p_i*ln(p_i)
 ```
-
-* Simpson's Diversity Index (D): The range is from 0 (low diversity) to 1 (high diversity).    
-
-```math
-D = \sum_{i=1}^{S}p_i^2
+barcode,alias
+barcode01,sample1
+barcode02,sample2
+barcode03,sample3
 ```
+### Quick command
+```bash
+nextflow run /share/16S/wf-metagenomics \
+--reference /share/16S/U16S-DPOT/output_db/U16S.BLAST_format.thanhlv.fa.gz \
+--fastq /input/data \
+--sample_sheet /path/to/sample_sheet.csv \
+--custom_db \
+--out_dir "output" \
+--emu_db "https://quadram-bioinfo-demo.s3.climb.ac.uk/16S/emu-db.tar.gz" \
+--taxonomy "/share/16S/U16S-DPOT/taxonomy" \
+--threads 32 \
+-resume
 
-* Pielou Index (J): The values range from 0 (presence of a dominant species) and 1 (maximum evennes).    
-
-```math
-J = H/ln(S)
 ```
+### Usage
 
+```bash
+||||||||||   _____ ____ ___ ____  __  __ _____      _       _
+||||||||||  | ____|  _ \_ _|___ \|  \/  | ____|    | | __ _| |__  ___
+|||||       |  _| | |_) | |  __) | |\/| |  _| _____| |/ _` | '_ \/ __|
+|||||       | |___|  __/| | / __/| |  | | |__|_____| | (_| | |_) \__ \
+||||||||||  |_____|_|  |___|_____|_|  |_|_____|    |_|\__,_|_.__/|___/
+||||||||||  wf-metagenomics v2.3.0
+--------------------------------------------------------------------------------
+Typical pipeline command:
 
-These indices are calculated by default using the original abundance table (see McMurdie and Holmes<sup>[2](https://pubmed.ncbi.nlm.nih.gov/24699258/)</sup>, 2014 and Willis<sup>[3](https://www.frontiersin.org/articles/10.3389/fmicb.2019.02407/full)</sup>, 2019). If you want to calculate them from a rarefied abundance table (i.e. all the samples have been subsampled to contain the same number of counts per sample, which is the 95% of the minimum number of total counts), you can use download the rarefied table from the report.
+  nextflow run epi2me-labs/wf-metagenomics \ 
+        --fastq test_data/case01/barcode01/reads.fastq.gz
 
-The report also includes the rarefaction curve per sample which displays the mean of species richness for a subsample of reads (sample size). Generally, this curve initially grows rapidly, as most abundant species are sequenced and they add new taxa in the community, then slightly flattens due to the fact that 'rare' species are more difficult of being sampled, and because of that is more difficult to report an increase in the number of observed species.
+Input Options
+  --fastq                [string]  A fastq file or a directory of directories containing fastq input files.
+  --classifier           [string]  Kraken2 or Minimap2 workflow to be used for classification of reads. [default: mapping]
+  --batch_size           [integer] Maximum number of sequence records to process in a batch.
+  --analyse_unclassified [boolean] Analyse unclassified reads from input directory. By default the workflow will not process reads in the unclassified 
+                                   directory. 
 
-*Note: Within each rank, each named taxon is considered to be a unique unit. The counts are the number of reads assigned to that taxon. All 'Unknown' sequences are considered as a unique taxon.*
+Real Time Analysis Options
+  --watch_path           [boolean] Enable to continuously watch the input directory for new input files. Reads will be analysed as they appear
+  --read_limit           [integer] Stop processing data when a particular number of reads have been analysed. By default the workflow will run 
+                                   indefinitely. 
 
+Sample Options
+  --sample_sheet         [string]  A CSV file used to map barcodes to sample aliases. The sample sheet can be provided when the input data is a directory 
+                                   containing sub-directories with FASTQ files. Used only with the minimap2 classifier. 
+  --sample               [string]  A single sample name for non-multiplexed data. Permissible if passing a single .fastq(.gz) file or directory of .fastq(.gz) 
+                                   files. 
 
+Reference Options
+  --database_set         [string]  Sets the reference, databases and taxonomy datasets that will be used for classifying reads. Choices: 
+                                   ['ncbi_16s_18s','ncbi_16s_18s_28s_ITS','PlusPF-8']. Workflow will require memory available to be slightly higher than the 
+                                   size of the database. PlusPF-8 database requires more than 8Gb. [default: ncbi_16s_18s] 
+  --database             [string]  Not required but can be used to specifically override kraken2 database [.tar.gz or Directory].
+  --taxonomy             [string]  Not required but can be used to specifically override taxonomy database. Change the default to use a different taxonomy file  
+                                   [.tar.gz or directory]. 
+  --store_dir            [string]  Where to store initial download of database. [default: store_dir]
+  --reference            [string]  Override the FASTA reference file selected by the database_set parameter. It can be a FASTA format reference sequence 
+                                   collection or a minimap2 MMI format index. 
 
+Minimap2 Based Options
+  --skip_minimap2        [boolean] Skip Minimap2
+  --skip_emu             [boolean] Skip EMU
+  --minimap2filter       [string]  Filter output of minimap2 by taxids inc. child nodes, E.g. "9606,1404"
+  --minimap2exclude      [boolean] Invert minimap2filter and exclude the given taxids instead
+  --ref2taxid            [string]  Not required but can be used to specify a  ref2taxid mapping. Format is .tsv (refname  taxid), no header row.
+  --split_prefix         [boolean] Enable if using a very large reference with minimap2
+  --custom_db            [boolean] Path to custom Minimap2 database
+  --emu_db               [string]  Path to EMU database
 
+Output Options
+  --out_dir              [string]  Directory for output of all user-facing files. [default: output]
 
+Advanced Options
+  --min_len              [integer] Specify read length lower limit
+  --min_read_qual        [number]  Minimum read quality.
+  --max_len              [integer] Specify read length upper limit
+  --threads              [integer] Maximum number of CPU threads to use per workflow task. [default: 2]
+  --server_threads       [integer] Number of CPU threads used by the kraken2 server for classifying reads. [default: 2]
+  --kraken_clients       [integer] Number of clients that can connect at once to the kraken-server for classifying reads. [default: 2]
 
+!! Hiding 13 params, use --show_hidden_params to show them !!
+--------------------------------------------------------------------------------
+If you use epi2me-labs/wf-metagenomics for your analysis please cite:
+
+* The nf-core framework
+  https://doi.org/10.1038/s41587-020-0439-x
+```
 ## Useful links
 
 * [nextflow](https://www.nextflow.io/)
