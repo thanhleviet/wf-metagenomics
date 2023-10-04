@@ -34,7 +34,6 @@ nextflow run /share/16S/wf-metagenomics \
 --custom_db \
 --out_dir "output" \
 --emu_db "https://quadram-bioinfo-demo.s3.climb.ac.uk/16S/emu-db.tar.gz" \
---taxonomy "/share/16S/U16S-DPOT/taxonomy" \
 --threads 32 \
 -resume
 
