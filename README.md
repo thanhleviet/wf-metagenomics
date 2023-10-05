@@ -29,7 +29,7 @@ barcode03,sample3
 ```bash
 nextflow run thanhleviet/wf-metagenomics \
 -r custom-db \
---reference /share/16S/U16S-DPOT/output_db/U16S.BLAST_format.thanhlv.fa.gz \
+--reference "https://quadram-bioinfo-demo.s3.climb.ac.uk/16S/U16S.BLAST_format.thanhlv.fa.gz" \
 --fastq /input/data \
 --sample_sheet /path/to/sample_sheet.csv \
 --custom_db \
